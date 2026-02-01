@@ -14,14 +14,16 @@ function App() {
         className="flex flex-col items-center justify-center px-6 text-center min-h-screen"
       >
         <div className="flex flex-col items-center">
+        <div className="w-28 md:w-36 h-28 md:h-36 mb-6 flex items-center justify-center">
           <motion.img
             src={logo}
             alt="ZonePredictor logo"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="w-28 md:w-36 mb-6 drop-shadow-[0_0_25px_rgba(34,197,94,0.6)]"
+            className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(34,197,94,0.6)]"
           />
+        </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
             ZonePredictor
           </h1>
