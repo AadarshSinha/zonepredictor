@@ -35,7 +35,7 @@ function App() {
         </p>
 
         <a
-          href="https://t.me/YOUR_BOT_USERNAME"
+          href="https://t.me/zonepredictorbot"
           target="_blank"
           rel="noreferrer"
           className="mt-10 inline-block rounded-lg bg-green-500 px-6 py-3 text-lg font-semibold text-black hover:bg-green-400 transition shadow-[0_0_20px_rgba(34,197,94,0.5)]"
@@ -172,7 +172,8 @@ function App() {
         <form
           name="contact"
           method="POST"
-          data-netlify="true"
+          netlify
+          action="/thank-you"
           className="mt-12 max-w-xl mx-auto space-y-6"
         >
           <input type="hidden" name="form-name" value="contact" />
