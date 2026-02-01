@@ -172,8 +172,8 @@ function App() {
         <form
           name="contact"
           method="POST"
-          netlify
-          action="/thank-you"
+          data-netlify="true"
+          action="/thank-you.html"
           className="mt-12 max-w-xl mx-auto space-y-6"
         >
           <input type="hidden" name="form-name" value="contact" />
