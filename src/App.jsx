@@ -1,8 +1,46 @@
 import { motion } from "framer-motion";
 import demoImage from "./assets/demo.png";
 import logo from "./assets/logo.png";
+import { useState } from "react";
+import example1 from "./assets/test1.jpg";
+import example2 from "./assets/test2.jpg";
 
 function App() {
+  const [image, setImage] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleUpload = async () => {
+    if (!image) return;
+
+    const formData = new FormData();
+    formData.append("file", image); // IMPORTANT: must match Flask key
+
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const res = await fetch("http://142.93.217.78/predict", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+
+      const blob = await res.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      setResult(imageUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Prediction failed.");
+    }
+
+    setLoading(false);
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white">
 
@@ -29,7 +67,6 @@ function App() {
           </h1>
         </div>
 
-
         <p className="mt-6 max-w-2xl text-lg text-zinc-300">
           AI-powered PUBG/BGMI zone prediction system trained directly on
           tournament match videos — built to understand zone movement patterns
@@ -37,12 +74,10 @@ function App() {
         </p>
 
         <a
-          href="https://t.me/zonepredictorbot"
-          target="_blank"
-          rel="noreferrer"
+          href="#live-upload"
           className="mt-10 inline-block rounded-lg bg-green-500 px-6 py-3 text-lg font-semibold text-black hover:bg-green-400 transition shadow-[0_0_20px_rgba(34,197,94,0.5)]"
         >
-          Try on Telegram
+          Try It Now
         </a>
 
         <p className="mt-6 text-sm text-zinc-500">
@@ -87,54 +122,13 @@ function App() {
         </div>
       </motion.section>
 
-      {/* Demo Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-        className="px-6 py-20"
-      >
-        <h2 className="text-3xl font-bold text-center">See It In Action</h2>
-
-        <div className="mt-12 max-w-5xl mx-auto grid gap-12 md:grid-cols-2 items-center">
-          <div>
-            <ol className="space-y-6 text-zinc-300">
-              <li>
-                <span className="text-green-400 font-semibold">Step 1:</span>{" "}
-                Take a screenshot where the current safe zone is clearly visible —
-                from a tournament map stream or a player POV during a live or recorded match.
-              </li>
-              <li>
-                <span className="text-green-400 font-semibold">Step 2:</span>{" "}
-                Send the screenshot to the ZonePredictor Telegram bot.
-              </li>
-              <li>
-                <span className="text-green-400 font-semibold">Step 3:</span>{" "}
-                Receive the AI-predicted next safe zone instantly.
-              </li>
-            </ol>
-          </div>
-          <div className="bg-black border border-zinc-800 rounded-xl overflow-hidden shadow-lg">
-            <img
-              src={demoImage}
-              alt="Zone prediction demo"
-              className="w-full h-full object-cover"
-            />
-            <div className="p-4 bg-zinc-900 text-sm text-zinc-400 border-t border-zinc-800">
-              Example output from the Telegram bot showing predicted next zone.
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
       {/* Accuracy Section */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="px-6 py-20 bg-zinc-950"
+        className="px-6 py-20"
       >
         <h2 className="text-3xl font-bold text-center">Current Model Accuracy</h2>
 
@@ -153,6 +147,107 @@ function App() {
             200 tournament videos. Performance is expected to improve significantly
             as the training dataset grows toward 10,000+ matches.
           </p>
+        </div>
+      </motion.section>
+      
+      {/* Live Upload Section */}
+      <motion.section
+        id ="live-upload"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="px-6 py-20 bg-zinc-950"
+      >
+        <h2 className="text-3xl font-bold text-center">Try It Live</h2>
+
+        <p className="mt-4 text-center text-zinc-400 max-w-2xl mx-auto">
+          Upload a screenshot showing the current safe zone, and the AI will predict
+          where the next zone is likely to appear.
+        </p>
+
+        <div className="mt-12 max-w-xl mx-auto">
+
+          {/* Upload Box */}
+          <label className="flex flex-col items-center justify-center w-full h-52 border-2 border-dashed border-zinc-700 rounded-xl cursor-pointer hover:border-green-400 transition bg-zinc-900/40 backdrop-blur-sm">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
+              className="hidden"
+            />
+            <p className="text-zinc-400 text-sm">
+              Click to upload screenshot
+            </p>
+            {image && (
+              <p className="mt-3 text-green-400 text-sm font-medium">
+                {image.name}
+              </p>
+            )}
+          </label>
+          {/* Example Links */}
+          <div className="mt-10 text-center">
+            <p className="text-zinc-500 text-sm mb-4">
+              Not sure what to upload? View example screenshots:
+            </p>
+
+            <div className="flex justify-center gap-6 text-sm">
+              <a
+                href={example1}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-400 hover:text-green-300 underline transition"
+              >
+                Example 1
+              </a>
+
+              <a
+                href={example2}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-400 hover:text-green-300 underline transition"
+              >
+                Example 2
+              </a>
+            </div>
+          </div>
+          {/* Button */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={handleUpload}
+              disabled={!image || loading}
+              className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg
+                ${loading
+                  ? "bg-green-500/60 cursor-not-allowed"
+                  : "bg-green-500 hover:bg-green-400 shadow-[0_0_25px_rgba(34,197,94,0.5)]"
+                }
+                text-black`}
+            >
+              {loading ? "Processing..." : "Predict Next Zone"}
+            </button>
+          </div>
+
+          {/* Loader */}
+          {loading && (
+            <div className="mt-8 flex justify-center">
+              <div className="w-10 h-10 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          {/* Result */}
+          {result && !loading && (
+            <div className="mt-12 text-center">
+              <h3 className="text-green-400 font-semibold mb-4">
+                Predicted Zone
+              </h3>
+              <img
+                src={result}
+                alt="Prediction result"
+                className="rounded-xl border border-zinc-800 shadow-2xl max-w-full mx-auto"
+              />
+            </div>
+          )}
+
         </div>
       </motion.section>
 
