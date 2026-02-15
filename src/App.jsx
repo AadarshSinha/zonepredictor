@@ -20,7 +20,7 @@ function App() {
     setResult(null);
 
     try {
-      const res = await fetch("http://142.93.217.78/predict", {
+      const res = await fetch("https://api.zonepredictor.com/predict", {
         method: "POST",
         body: formData,
       });
