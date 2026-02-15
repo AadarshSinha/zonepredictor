@@ -10,36 +10,80 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const prepareImageForUpload = (file) => {
+    return new Promise((resolve) => {
+      const MAX_SIZE = 1 * 1024 * 1024; // 1MB
+      const MAX_WIDTH = 1280;
+
+      // If already small, return original file
+      if (file.size <= MAX_SIZE) {
+        resolve(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          // Resize only if width larger than max
+          if (width > MAX_WIDTH) {
+            height = height * (MAX_WIDTH / width);
+            width = MAX_WIDTH;
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob);
+            },
+            "image/jpeg",
+            0.8 // compression quality
+          );
+        };
+      };
+    });
+  };
+
   const handleUpload = async () => {
     if (!image) return;
 
-    const formData = new FormData();
-    formData.append("file", image); // IMPORTANT: must match Flask key
-
     setLoading(true);
-    setResult(null);
 
     try {
-      const res = await fetch("https://api.zonepredictor.com/predict", {
-        method: "POST",
-        body: formData,
-      });
+      const processedImage = await prepareImageForUpload(image);
 
-      if (!res.ok) {
-        throw new Error("Server error");
-      }
+      const formData = new FormData();
+      formData.append("file", processedImage);
 
-      const blob = await res.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      setResult(imageUrl);
-    } catch (err) {
-      console.error(err);
-      alert("Prediction failed.");
+      const response = await fetch(
+        "https://api.zonepredictor.com/predict",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const blob = await response.blob();
+      setResult(URL.createObjectURL(blob));
+    } catch (error) {
+      console.error("Upload failed:", error);
     }
 
     setLoading(false);
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white">
