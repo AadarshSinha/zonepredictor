@@ -20,8 +20,6 @@ const GAMES = [
  */
 export function FeedbackPrompt() {
   const [open, setOpen] = useState(false);
-  const [game, setGame] = useState(null);
-  const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -43,22 +41,21 @@ export function FeedbackPrompt() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, dismiss]);
 
-  const submit = async (event) => {
-    event.preventDefault();
-    const text = message.trim();
-    // A tap on its own is a complete answer — text is the optional half.
-    if ((!text && !game) || sending) return;
+  // The tap is the submission. No Save button to forget, nothing to lose by
+  // closing the tab — the answer is recorded the moment it is given.
+  const choose = async (value) => {
+    if (sending || sent) return;
 
     setSending(true);
     try {
-      await sendProductFeedback({ game, message: text });
+      await sendProductFeedback({ game: value });
     } catch {
       // Their answer is worth more than a correct error message here; thank
       // them either way rather than turning a favour into a problem.
     }
     setSending(false);
     setSent(true);
-    setTimeout(() => setOpen(false), 1600);
+    setTimeout(() => setOpen(false), 1800);
   };
 
   if (!open) return null;
@@ -71,9 +68,9 @@ export function FeedbackPrompt() {
       className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-md rounded-2xl border border-zinc-700 bg-zinc-900/95 p-5 shadow-2xl backdrop-blur sm:left-auto sm:right-6"
     >
       {sent ? (
-        <p className="text-sm text-green-400">Thanks — that genuinely helps.</p>
+        <p className="text-sm text-green-400">Thanks — that helps.</p>
       ) : (
-        <form onSubmit={submit}>
+        <>
           <div className="flex items-start justify-between gap-3">
             <h2 id="feedback-prompt-title" className="text-sm font-semibold">
               Which do you play?
@@ -93,47 +90,15 @@ export function FeedbackPrompt() {
               <button
                 key={option.value}
                 type="button"
-                aria-pressed={game === option.value}
-                onClick={() =>
-                  setGame((current) =>
-                    current === option.value ? null : option.value
-                  )
-                }
-                className={`rounded-lg border px-3 py-2 text-sm transition ${
-                  game === option.value
-                    ? "border-green-400 bg-green-500/15 text-white"
-                    : "border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
-                }`}
+                disabled={sending}
+                onClick={() => choose(option.value)}
+                className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-green-400 hover:bg-green-500/10 hover:text-white disabled:opacity-50"
               >
                 {option.label}
               </button>
             ))}
           </div>
-
-          <label htmlFor="feedback-message" className="mt-4 block text-xs text-zinc-500">
-            Anything you wish it did better? (optional)
-          </label>
-          <textarea
-            id="feedback-message"
-            rows={2}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            maxLength={2000}
-            className="mt-2 w-full resize-none rounded-lg border border-zinc-700 bg-black/60 px-3 py-2 text-sm text-white outline-none transition focus:border-green-400"
-          />
-
-          <button
-            type="submit"
-            disabled={(!message.trim() && !game) || sending}
-            className={`mt-3 w-full rounded-lg py-2.5 text-sm font-semibold text-black transition ${
-              (!message.trim() && !game) || sending
-                ? "cursor-not-allowed bg-green-500/50"
-                : "bg-green-500 hover:bg-green-400"
-            }`}
-          >
-            {sending ? "Saving…" : "Save"}
-          </button>
-        </form>
+        </>
       )}
     </div>
   );

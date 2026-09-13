@@ -499,39 +499,36 @@ describe("product feedback prompt", () => {
     expect(screen.getByRole("button", { name: "BGMI" })).toBeInTheDocument();
   });
 
-  it("saves a tap on its own, with no typing", async () => {
+  it("saves on the tap itself, with no Save button to press", async () => {
     const fetchMock = mockBackend({ "/feedback": () => jsonResponse(201, { ok: true }) });
     const user = userEvent.setup();
     await openPrompt();
 
+    expect(screen.queryByRole("button", { name: /^save$/i })).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "PUBG PC" }));
-    await user.click(screen.getByRole("button", { name: /^save$/i }));
 
     const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/feedback"));
+    expect(call).toBeTruthy();
     const body = JSON.parse(call[1].body);
     expect(body.game).toBe("pubg_pc");
     expect(body.message).toBeNull();
     expect(typeof body.timezone).toBe("string");
+
+    expect(await screen.findByText(/thanks/i)).toBeInTheDocument();
   });
 
-  it("sends the comment alongside the tap when both are given", async () => {
-    const fetchMock = mockBackend({ "/feedback": () => jsonResponse(201, { ok: true }) });
+  it("thanks the user even when saving fails", async () => {
+    mockBackend({
+      "/feedback": () => {
+        throw new TypeError("Failed to fetch");
+      },
+    });
     const user = userEvent.setup();
     await openPrompt();
 
     await user.click(screen.getByRole("button", { name: "BGMI" }));
-    await user.type(screen.getByLabelText(/anything you wish/i), "later zones are off");
-    await user.click(screen.getByRole("button", { name: /^save$/i }));
-
-    const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/feedback"));
-    const body = JSON.parse(call[1].body);
-    expect(body).toMatchObject({ game: "bgmi", message: "later zones are off" });
-  });
-
-  it("cannot be saved empty", async () => {
-    mockBackend();
-    await openPrompt();
-    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
+    expect(await screen.findByText(/thanks/i)).toBeInTheDocument();
   });
 
   it("asks again on the next load, remembering nothing", async () => {
