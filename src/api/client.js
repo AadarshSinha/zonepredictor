@@ -150,12 +150,13 @@ export const predictZone = (file, filename = "screenshot.jpg") => {
  * from the browser itself — no permission prompt, and enough to know which
  * part of the world an answer came from.
  */
-export const sendProductFeedback = (message) =>
+export const sendProductFeedback = ({ game, message }) =>
   request("/feedback", {
     method: "POST",
     auth: true,
     body: {
-      message,
+      game: game || null,
+      message: message || null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? null,
       locale: navigator.language ?? null,
     },

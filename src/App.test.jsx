@@ -482,56 +482,73 @@ describe("product feedback prompt", () => {
     vi.useRealTimers();
   });
 
-  it("appears on a timer, without anyone having to predict first", async () => {
-    mockBackend();
+  const openPrompt = async () => {
     render(<App />);
-
-    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
-
     await act(async () => {
       vi.advanceTimersByTime(10100);
     });
-    expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
+  };
+
+  it("appears on a timer and offers the three games", async () => {
+    mockBackend();
+    await openPrompt();
+
+    expect(screen.getByText(/which do you play/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PUBG PC" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PUBG Mobile" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "BGMI" })).toBeInTheDocument();
   });
 
-  it("saves the answer with the browser's timezone and locale", async () => {
+  it("saves a tap on its own, with no typing", async () => {
     const fetchMock = mockBackend({ "/feedback": () => jsonResponse(201, { ok: true }) });
     const user = userEvent.setup();
-    render(<App />);
+    await openPrompt();
 
-    await act(async () => {
-      vi.advanceTimersByTime(10100);
-    });
-
-    await user.type(screen.getByLabelText(/your answer/i), "want better accuracy");
+    await user.click(screen.getByRole("button", { name: "PUBG PC" }));
     await user.click(screen.getByRole("button", { name: /^save$/i }));
 
     const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/feedback"));
-    expect(call).toBeTruthy();
     const body = JSON.parse(call[1].body);
-    expect(body.message).toBe("want better accuracy");
+    expect(body.game).toBe("pubg_pc");
+    expect(body.message).toBeNull();
     expect(typeof body.timezone).toBe("string");
-    expect(typeof body.locale).toBe("string");
+  });
+
+  it("sends the comment alongside the tap when both are given", async () => {
+    const fetchMock = mockBackend({ "/feedback": () => jsonResponse(201, { ok: true }) });
+    const user = userEvent.setup();
+    await openPrompt();
+
+    await user.click(screen.getByRole("button", { name: "BGMI" }));
+    await user.type(screen.getByLabelText(/anything you wish/i), "later zones are off");
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
+
+    const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/feedback"));
+    const body = JSON.parse(call[1].body);
+    expect(body).toMatchObject({ game: "bgmi", message: "later zones are off" });
+  });
+
+  it("cannot be saved empty", async () => {
+    mockBackend();
+    await openPrompt();
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
   });
 
   it("asks again on the next load, remembering nothing", async () => {
-    // No storage flag: a reload is a fresh ask, which is the point.
     mockBackend();
     const user = userEvent.setup();
     const first = render(<App />);
-
     await act(async () => {
       vi.advanceTimersByTime(10100);
     });
     await user.click(screen.getByRole("button", { name: /close/i }));
-    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
-    expect(window.localStorage.getItem("zp_asked_product_feedback")).toBeNull();
+    expect(screen.queryByText(/which do you play/i)).not.toBeInTheDocument();
 
     first.unmount();
     render(<App />);
     await act(async () => {
       vi.advanceTimersByTime(10100);
     });
-    expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
+    expect(screen.getByText(/which do you play/i)).toBeInTheDocument();
   });
 });
