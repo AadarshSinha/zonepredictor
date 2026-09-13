@@ -51,9 +51,9 @@ export function Hero({ backendStatus }) {
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-300">
-          Upload a BGMI/PUBG minimap screenshot. ZonePredictor finds the current
-          safe zone and projects where the next circle is most likely to form,
-          learned from hundreds of hours of tournament footage.
+          Upload a BGMI or PUBG Mobile minimap screenshot. ZonePredictor finds the
+          current safe zone and projects where the next circle is most likely to
+          form, learned from hundreds of hours of tournament footage.
         </p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
