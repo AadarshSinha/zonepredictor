@@ -27,7 +27,7 @@ const RATINGS = [
   { value: "way_off", label: "Way off" },
 ];
 
-export function Predictor({ backendStatus, onPredicted }) {
+export function Predictor({ backendStatus }) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [result, setResult] = useState(null);
@@ -109,7 +109,6 @@ export function Predictor({ backendStatus, onPredicted }) {
       setRating(null);
       setRatingFailed(false);
       showResult(URL.createObjectURL(blob));
-      onPredicted?.();
     } catch (err) {
       setError(err?.message || "Something went wrong. Please try again.");
       setHint(HINTS[err?.code] ?? null);

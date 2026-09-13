@@ -4,10 +4,9 @@ import { sendProductFeedback } from "../api/client";
 
 const ASKED_KEY = "zp_asked_product_feedback";
 
-// Long enough that it never lands on top of a result the user is still
-// reading, short enough that they have not moved on.
-const DELAY_AFTER_PREDICTION_MS = 7000;
-const DELAY_WITHOUT_PREDICTION_MS = 90000;
+// Long enough that someone has read the page and formed an impression, short
+// enough to still catch them: most sessions are over well before a minute.
+const DELAY_MS = 30000;
 
 const alreadyAsked = () => {
   try {
@@ -28,11 +27,10 @@ const markAsked = () => {
 /**
  * One question, one answer, once per visitor.
  *
- * It appears after someone has actually used the thing — an opinion from
- * someone who just saw a prediction is worth more than one from a visitor who
- * only scrolled — and falls back to a timer for people who never upload.
+ * Shown on a timer rather than after a prediction: most visitors never upload
+ * anything, and what they were hoping for is exactly what we want to know.
  */
-export function FeedbackPrompt({ hasPredicted }) {
+export function FeedbackPrompt() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
@@ -40,14 +38,9 @@ export function FeedbackPrompt({ hasPredicted }) {
 
   useEffect(() => {
     if (alreadyAsked()) return undefined;
-
-    const delay = hasPredicted
-      ? DELAY_AFTER_PREDICTION_MS
-      : DELAY_WITHOUT_PREDICTION_MS;
-
-    const timer = setTimeout(() => setOpen(true), delay);
+    const timer = setTimeout(() => setOpen(true), DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hasPredicted]);
+  }, []);
 
   // Declared before the effect that uses it — a `const` referenced from an
   // earlier closure cannot be read at definition time.

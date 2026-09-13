@@ -483,46 +483,31 @@ describe("product feedback prompt", () => {
     vi.useRealTimers();
   });
 
-  const predict = async (user) => {
-    const input = document.querySelector('input[type="file"]');
-    await user.upload(input, screenshot());
-    await user.click(screen.getByRole("button", { name: /predict next zone/i }));
-    await screen.findByAltText(/prediction result/i);
-  };
-
-  it("asks once after someone has actually used it", async () => {
-    mockBackend({ "/predict": () => imageResponse("42") });
-    const user = userEvent.setup();
+  it("appears on a timer, without anyone having to predict first", async () => {
+    mockBackend();
     render(<App />);
 
-    await predict(user);
     expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
 
     await act(async () => {
-      vi.advanceTimersByTime(7100);
+      vi.advanceTimersByTime(30100);
     });
     expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
   });
 
   it("saves the answer with the browser's timezone and locale", async () => {
-    const fetchMock = mockBackend({
-      "/predict": () => imageResponse("42"),
-      "/feedback": () => jsonResponse(201, { ok: true }),
-    });
+    const fetchMock = mockBackend({ "/feedback": () => jsonResponse(201, { ok: true }) });
     const user = userEvent.setup();
     render(<App />);
 
-    await predict(user);
     await act(async () => {
-      vi.advanceTimersByTime(7100);
+      vi.advanceTimersByTime(30100);
     });
 
     await user.type(screen.getByLabelText(/your answer/i), "want better accuracy");
     await user.click(screen.getByRole("button", { name: /^save$/i }));
 
-    const call = fetchMock.mock.calls.find(([url]) =>
-      String(url).endsWith("/feedback")
-    );
+    const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/feedback"));
     expect(call).toBeTruthy();
     const body = JSON.parse(call[1].body);
     expect(body.message).toBe("want better accuracy");
@@ -532,15 +517,27 @@ describe("product feedback prompt", () => {
 
   it("never asks the same visitor twice", async () => {
     window.localStorage.setItem("zp_asked_product_feedback", "1");
-    mockBackend({ "/predict": () => imageResponse("42") });
-    const user = userEvent.setup();
+    mockBackend();
     render(<App />);
 
-    await predict(user);
     await act(async () => {
       vi.advanceTimersByTime(120000);
     });
 
     expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
+  });
+
+  it("stops asking once dismissed", async () => {
+    mockBackend();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(30100);
+    });
+    await user.click(screen.getByRole("button", { name: /close/i }));
+
+    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("zp_asked_product_feedback")).toBe("1");
   });
 });

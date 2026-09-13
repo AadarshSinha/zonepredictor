@@ -18,11 +18,9 @@ import { SupportedMaps } from "./components/SupportedMaps";
 function Page() {
   const { status: backendStatus, info, recheck } = useBackendStatus();
   const [authOpen, setAuthOpen] = useState(false);
-  const [hasPredicted, setHasPredicted] = useState(false);
 
   const openAuth = useCallback(() => setAuthOpen(true), []);
   const closeAuth = useCallback(() => setAuthOpen(false), []);
-  const notePrediction = useCallback(() => setHasPredicted(true), []);
 
   return (
     <div className="min-h-screen bg-black text-white antialiased">
@@ -31,7 +29,7 @@ function Page() {
 
       <main>
         <Hero backendStatus={backendStatus} />
-        <Predictor backendStatus={backendStatus} onPredicted={notePrediction} />
+        <Predictor backendStatus={backendStatus} />
         <HowItWorks />
         <SupportedMaps backendMaps={info?.supportedMaps} />
         <Performance />
@@ -42,7 +40,7 @@ function Page() {
       <Footer backendInfo={info} />
 
       <AuthDialog open={authOpen} onClose={closeAuth} />
-      <FeedbackPrompt hasPredicted={hasPredicted} />
+      <FeedbackPrompt />
     </div>
   );
 }
