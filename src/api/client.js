@@ -145,6 +145,22 @@ export const predictZone = (file, filename = "screenshot.jpg") => {
   return request("/predict", { method: "POST", body: form, auth: true, raw: true });
 };
 
+/**
+ * Answer to the "what are you looking for?" prompt. Timezone and locale come
+ * from the browser itself — no permission prompt, and enough to know which
+ * part of the world an answer came from.
+ */
+export const sendProductFeedback = (message) =>
+  request("/feedback", {
+    method: "POST",
+    auth: true,
+    body: {
+      message,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? null,
+      locale: navigator.language ?? null,
+    },
+  });
+
 /** How good was that prediction? One of "spot_on" | "close" | "way_off". */
 export const ratePrediction = (predictionId, rating) =>
   request(`/predict/${predictionId}/feedback`, {

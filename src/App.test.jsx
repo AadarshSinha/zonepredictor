@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 
@@ -470,5 +470,77 @@ describe("prediction feedback", () => {
     await uploadAndPredict(user);
 
     expect(screen.queryByText(/how close was this/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("product feedback prompt", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const predict = async (user) => {
+    const input = document.querySelector('input[type="file"]');
+    await user.upload(input, screenshot());
+    await user.click(screen.getByRole("button", { name: /predict next zone/i }));
+    await screen.findByAltText(/prediction result/i);
+  };
+
+  it("asks once after someone has actually used it", async () => {
+    mockBackend({ "/predict": () => imageResponse("42") });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await predict(user);
+    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      vi.advanceTimersByTime(7100);
+    });
+    expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
+  });
+
+  it("saves the answer with the browser's timezone and locale", async () => {
+    const fetchMock = mockBackend({
+      "/predict": () => imageResponse("42"),
+      "/feedback": () => jsonResponse(201, { ok: true }),
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await predict(user);
+    await act(async () => {
+      vi.advanceTimersByTime(7100);
+    });
+
+    await user.type(screen.getByLabelText(/your answer/i), "want better accuracy");
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
+
+    const call = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith("/feedback")
+    );
+    expect(call).toBeTruthy();
+    const body = JSON.parse(call[1].body);
+    expect(body.message).toBe("want better accuracy");
+    expect(typeof body.timezone).toBe("string");
+    expect(typeof body.locale).toBe("string");
+  });
+
+  it("never asks the same visitor twice", async () => {
+    window.localStorage.setItem("zp_asked_product_feedback", "1");
+    mockBackend({ "/predict": () => imageResponse("42") });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await predict(user);
+    await act(async () => {
+      vi.advanceTimersByTime(120000);
+    });
+
+    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
   });
 });
