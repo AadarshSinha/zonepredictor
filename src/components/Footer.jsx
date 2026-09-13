@@ -23,7 +23,7 @@ export function Footer({ backendInfo }) {
               </span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-              Zone prediction for BGMI and PUBG Mobile, learned from tournament footage.
+              Zone prediction for BGMI and PUBG, learned from tournament footage.
               Not affiliated with Krafton, Tencent or Level Infinite.
             </p>
           </div>
