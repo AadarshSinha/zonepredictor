@@ -475,7 +475,6 @@ describe("prediction feedback", () => {
 
 describe("product feedback prompt", () => {
   beforeEach(() => {
-    window.localStorage.clear();
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
@@ -515,29 +514,24 @@ describe("product feedback prompt", () => {
     expect(typeof body.locale).toBe("string");
   });
 
-  it("never asks the same visitor twice", async () => {
-    window.localStorage.setItem("zp_asked_product_feedback", "1");
-    mockBackend();
-    render(<App />);
-
-    await act(async () => {
-      vi.advanceTimersByTime(120000);
-    });
-
-    expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
-  });
-
-  it("stops asking once dismissed", async () => {
+  it("asks again on the next load, remembering nothing", async () => {
+    // No storage flag: a reload is a fresh ask, which is the point.
     mockBackend();
     const user = userEvent.setup();
-    render(<App />);
+    const first = render(<App />);
 
     await act(async () => {
       vi.advanceTimersByTime(10100);
     });
     await user.click(screen.getByRole("button", { name: /close/i }));
-
     expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
-    expect(window.localStorage.getItem("zp_asked_product_feedback")).toBe("1");
+    expect(window.localStorage.getItem("zp_asked_product_feedback")).toBeNull();
+
+    first.unmount();
+    render(<App />);
+    await act(async () => {
+      vi.advanceTimersByTime(10100);
+    });
+    expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
   });
 });

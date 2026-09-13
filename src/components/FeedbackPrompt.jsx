@@ -2,32 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { sendProductFeedback } from "../api/client";
 
-const ASKED_KEY = "zp_asked_product_feedback";
-
 // Early enough to catch people who bounce quickly.
 const DELAY_MS = 10000;
 
-const alreadyAsked = () => {
-  try {
-    return window.localStorage.getItem(ASKED_KEY) === "1";
-  } catch {
-    return false; // storage disabled — worst case we ask again next visit
-  }
-};
-
-const markAsked = () => {
-  try {
-    window.localStorage.setItem(ASKED_KEY, "1");
-  } catch {
-    // Nothing to do; the prompt is a nicety, not a feature to break over.
-  }
-};
-
 /**
- * One question, one answer, once per visitor.
+ * One question, one answer, on every page load.
  *
- * Shown on a timer rather than after a prediction: most visitors never upload
- * anything, and what they were hoping for is exactly what we want to know.
+ * Deliberately not remembered between visits: nothing is written to storage,
+ * so a reload asks again. Dismissing hides it for the current page only.
  */
 export function FeedbackPrompt() {
   const [open, setOpen] = useState(false);
@@ -36,17 +18,13 @@ export function FeedbackPrompt() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    if (alreadyAsked()) return undefined;
     const timer = setTimeout(() => setOpen(true), DELAY_MS);
     return () => clearTimeout(timer);
   }, []);
 
   // Declared before the effect that uses it — a `const` referenced from an
   // earlier closure cannot be read at definition time.
-  const dismiss = useCallback(() => {
-    markAsked();
-    setOpen(false);
-  }, []);
+  const dismiss = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -63,7 +41,6 @@ export function FeedbackPrompt() {
     if (!text || sending) return;
 
     setSending(true);
-    markAsked();
     try {
       await sendProductFeedback(text);
     } catch {
