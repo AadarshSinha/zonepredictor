@@ -490,7 +490,7 @@ describe("product feedback prompt", () => {
     expect(screen.queryByText(/what are you hoping/i)).not.toBeInTheDocument();
 
     await act(async () => {
-      vi.advanceTimersByTime(30100);
+      vi.advanceTimersByTime(10100);
     });
     expect(screen.getByText(/what are you hoping/i)).toBeInTheDocument();
   });
@@ -501,7 +501,7 @@ describe("product feedback prompt", () => {
     render(<App />);
 
     await act(async () => {
-      vi.advanceTimersByTime(30100);
+      vi.advanceTimersByTime(10100);
     });
 
     await user.type(screen.getByLabelText(/your answer/i), "want better accuracy");
@@ -533,7 +533,7 @@ describe("product feedback prompt", () => {
     render(<App />);
 
     await act(async () => {
-      vi.advanceTimersByTime(30100);
+      vi.advanceTimersByTime(10100);
     });
     await user.click(screen.getByRole("button", { name: /close/i }));
 

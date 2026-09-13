@@ -4,9 +4,8 @@ import { sendProductFeedback } from "../api/client";
 
 const ASKED_KEY = "zp_asked_product_feedback";
 
-// Long enough that someone has read the page and formed an impression, short
-// enough to still catch them: most sessions are over well before a minute.
-const DELAY_MS = 30000;
+// Early enough to catch people who bounce quickly.
+const DELAY_MS = 10000;
 
 const alreadyAsked = () => {
   try {
